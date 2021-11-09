@@ -1,0 +1,32 @@
+name: 中青share1
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0-23/3 * * *'
+jobs:
+  build:
+    runs-on: ubuntu-latest 
+    if: github.event.repository.owner.id == github.event.sender.id
+    env:
+        User: ${{ github.event.repository.owner.id }}
+    steps:
+
+      - name: Checkout
+        run: |
+          git clone https://github.com/caixukun112/js.git ~/js
+      - name: Use Node.js 14.x
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14.x
+      - name: npm install
+        run: |
+          cd ~/js
+          npm install
+          npm install cron
+          npm install request
+          npm install md5-node
+      - name: '运行 【中青share1】'
+        run: |
+          cd ~/js   
+          node Task/youthshare1.js
