@@ -1,408 +1,132 @@
-/*
 
-脚本名称："书旗小说多账户号稳定版";
-适用版本：verson 4.3.6 ; 适用版本：verson 4.3.6 ; 适用版本：verson 4.3.6 ;（重要事情说三遍）
-作者：caixukun;
+const $ = new Env('youthshare');
+let md5 = require('md5-node');
+let nowTime;
+let wxck;
+let articles = ["https://focus.youth.cn/article/s?signature=yGdoJZx2eAwpjgl7O8AJ5wHzE6qxFgyOPbNa0PMbqvLnr9EKzR&uid=58247840&phone_code=ee3f6c3e0d4bcaf51877ee0de240e0e9&scid=39710592&time=1628937315&app_version=2.0.2&sign=2f5e20cd782da89dcf55ef894303df89",
+"https://focus.youth.cn/article/s?signature=2E96MJNGrnvW8pX1dEzGWASGgQ05teNPR9B45okQ0dyYRDBzxL&uid=58247840&phone_code=ee3f6c3e0d4bcaf51877ee0de240e0e9&scid=39718812&time=1628937327&app_version=2.0.2&sign=26ebf6c5b5c59847554021b95ce061ba",
+"https://focus.youth.cn/article/s?signature=8MzJgNdEKAO0xvq7nDJj0zsbA6QVI5lpADk1ZPYQ3lm9pbD2yn&uid=58247840&phone_code=ee3f6c3e0d4bcaf51877ee0de240e0e9&scid=39713117&time=1628937338&app_version=2.0.2&sign=829763cdfd61367154ac1949607e525e"
+]
 
-
-【注意事项】：
-0.所有js脚本均为本地脚本，非远程目录。
-
-1.有时候会出现获取不到ck的情况，请关闭代理重复该步骤多试几次；
-
-2.看视频金币ck获取可能会出现视频加载失败，可以先关闭qx，待视频能看再打开qx;
-
-3.运行次数大概一天，一到两次，日收益5毛左右；
-
-4.阅读任务可能会出现中断，读者可自行更改间隔时间；
-
-5.所有ck获取完成，可以打开boxjs看看书否所有的参数都有值，不要出现账号1的ack和账号2的bck混合在一起；
+let encodearticles;
 
 
-【nodejs教程】：
-打开boxjs，复制会话，新建文件，粘贴，改文件名为 sqxsck.json,与本脚本放同一目录下，用nodejs即可运行本脚本；
-
-
-【QX教程】：
-hostname：ocean.shuqireader.com
-
-[rewrite_local]
-https://ocean.shuqireader.com/api/ad/v1/api/prize/lottery url script-request-body sqxsgetck.js
-https://ocean.shuqireader.com/api/activity/activity/v1/lottery/draw url script-request-body sqxsgetck.js
-https://ocean.shuqireader.com/api/activity/xapi/gold/record url script-request-body sqxsgetck.js
-https://ocean.shuqireader.com/api/prizecenter/xapi/prize/manual/receive url script-request-body sqxsgetck.js
-https://ocean.shuqireader.com/api/ad/v1/api/prize/readpage/pendant/lottery url script-request-body sqxsgetck.js
-
-[task_local]
-0 12 * * * sqxs.js, tag=书旗小说, enabled=true
-
-boxjs：https://raw.githubusercontent.com/xiaokxiansheng/js/master/Task/cxk10.boxjs.json
-
-共6个ck，打开书旗小说
-1.点击 我的-去赚钱-去看书，随便阅读一本书，金币转一圈获得 阅读ck;
-
-2.点击 我的-去赚钱-一键收取，获得 收集金币ck;
-
-3.点击 我的-去赚钱-看视频赚2500金币，看一个视频广告获得 视频金币奖励ck;
-
-4.点击 我的-去赚钱-福利转转转-看视频抽奖，获得 视频抽奖奖励ck 和 抽奖ck;
-
-5 点击 我的-去赚钱-记录,获得 用户信息url;
-
-
-
- */
-
-const jobname = '书旗小说';
-const $ = Env(jobname);
-
-/*ck解密*/
-let fs = require('fs');
-const crypto = require('crypto');
-
-function aesDecrypt(encrypted, key) {
-    const decipher = crypto.createDecipher('aes192', key);
-    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-    return decrypted;
-}
-
-let ReadTimes = 0;
-let vediogold = 0;
-let drawgold = 0;
+let headers = {
+    "Accept-Encoding": "gzip, deflate, br",
+    "Accept": "*/*",
+    "Connection": "keep-alive",
+    "Referer": "https://focus.youth.cn/",
+    "Host": "script.baertt.com",
+    "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 14_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.2(0x18000231) NetType/WIFI Language/zh_CN",
+    "Accept-Language": "zh-cn"
+};
 
 !(async() => {
-    await all();
+    for (let i = 0; i < articles.length; i++) {
+		encodearticles = encodeURIComponent(encodeURIComponent(articles[i]));
+        nowTime = new Date().getTime();
+        wxck = md5(nowTime);
+        $.log(wxck);
+		
+        await storage();
+        await $.wait(3000);
+
+        await visit();
+        await $.wait(3000);
+
+        await openpage();
+        await $.wait(3000);
+
+        await callback();
+        await $.wait(3000);
+
+    }
 })()
-.catch((e) => {
-    $.log('', `❌ ${$.name}, 失败! 原因: ${e}!`, '')
-})
-.finally(() => {
-    $.done();
-})
+.catch((e) => $.logErr(e))
+.finally(() => $.done())
 
-async function all() {
-    //nodejs运行
-    if ($.isNode()) {
+function storage() {
 
-        let encrypted = fs.readFileSync('./sqxsck.txt', 'utf8');
-        key = process.env.ENCRYPT_KEY;
-        let decrypted = await aesDecrypt(encrypted, key);
-        sqxsck = JSON.parse(decrypted);
-        //let sqxsck = require('./sqxsck.json');
-        let CountNumber = 1;
-        $.log(`============ 共 ${CountNumber} 个${jobname}账号=============`);
-       // for (let i = 0; i < CountNumber; i++) {
-		   
-		   
-		   let i=(new Date).getHours()-1;
-		   
-            if (sqxsck.datas[0 + 6 * i].val) {
-                readckArr = sqxsck.datas[0 + 6 * i].val.split('&&');
-                receivecoinckArr = sqxsck.datas[1 + 6 * i].val.split('&&');
-                vediogoldprizeckArr = sqxsck.datas[2 + 6 * i].val.split('&&');
-                vediodrawprizeckArr = sqxsck.datas[3 + 6 * i].val.split('&&');
-                drawckArr = sqxsck.datas[4 + 6 * i].val.split('&&');
-                userinfock = sqxsck.datas[5 + 6 * i].val;
+    return new Promise((resolve, reject) => {
+        nowTime = new Date().getTime();
+        const url = `https://script.baertt.com/count2/storage?t=${wxck}&referer=${encodearticles}&_=${nowTime}&jsonpcallback=jsonp2`;
+        const request = {
+            url: url,
+            headers: headers,
+        };
 
-                $.log(`\n============ 【书旗小说${i+1}】=============`);
-                ReadTimes = 0;
-                vediogold = 0;
-                drawgold = 0;
-
-                //阅读
-                await readbook();
-
-                //收集阅读金币
-                //if(ReadTimes>0)
-                await receivecoin();
-
-                //看视频奖励金币
-                await vediogoldprize(0);
-
-                //看视频奖励抽奖次数
-                //await vediodrawprize(0);
-                //await draw(0);
-                //个人信息
-                await userinfo();
+        $.get(request, function (error, response, data) {
+            try {
+                $.log(data);
+            } catch (e) {
+                $.log(e)
             }
-       // }
-
-    }
-    //QX运行
-    else {
-
-        let CountNumber = $.getval('CountNumber');
-        if (typeof CountNumber === 'undefined')
-            CountNumber = 1;
-        $.log(`============ 共 ${CountNumber} 个${jobname}账号=============`);
-
-        for (let i = 1; i <= CountNumber; i++) {
-            if ($.getdata(`readck${i}`)) {
-                readckArr = $.getdata(`readck${i}`).split('&&');
-                receivecoinckArr = $.getdata(`receivecoinck${i}`).split('&&');
-                vediogoldprizeckArr = $.getdata(`vediogoldprizeck${i}`).split('&&');
-                //vediodrawprizeckArr = $.getdata(`vediodrawprizeck${i}`).split('&&');
-                // drawckArr = $.getdata(`drawck${i}`).split('&&');
-                userinfock = $.getdata(`userinfock${i}`);
-                $.log('\n============ 【书旗小说' + i + '】=============');
-                ReadTimes = 0;
-                vediogold = 0;
-                drawgold = 0;
-                //阅读
-                await readbook();
-
-                //收集阅读金币
-                //if(ReadTimes>0)
-                await receivecoin();
-
-                //看视频奖励金币
-                await vediogoldprize(0);
-
-                //抽奖奖励金币
-                //await vediodrawprize(0);
-                //await draw(0);
-                //个人信息
-                await userinfo();
-            }
-        }
-
-    }
+            resolve();
+        })
+    })
 }
 
-function readbook() {
+function visit() {
+
     return new Promise((resolve, reject) => {
-        const url = "https://ocean.shuqireader.com/api/ad/v1/api/prize/readpage/pendant/lottery";
+        nowTime = new Date().getTime();
+        const url = `https://script.baertt.com/count2/visit?type=1&si=${wxck}&referer=${encodearticles}&_=${nowTime}&jsonpcallback=jsonp3`;
 
         const request = {
             url: url,
-            headers: JSON.parse(readckArr[1]),
-            body: readckArr[0]
+            headers: headers,
         };
-        $.post(request, async(error, request, data) => {
+
+        $.get(request, function (error, response, data) {
             try {
-                if (error) {
-                    $.log("阅读请求失败,再次尝试阅读");
-                    await $.wait(5000);
-                    await readbook();
-                } else {
-                    const result = JSON.parse(data)
-                        //$.log(data);
-                        if (result.status == 200) {
-                            ReadTimes++;
-                            $.log("【阅读任务】第" + ReadTimes + "次阅读成功，获得3金币");
-                            await $.wait(5000);
-                            await readbook();
-                        } else {
-
-                            if (result.message != '领取达到每日上限，请明天再来') {
-                                $.log("【阅读任务】阅读失败，" + result.message + ",再次尝试阅读");
-                                await $.wait(5000);
-                                await readbook();
-                            } else
-                                $.log("【阅读任务】阅读失败，" + result.message);
-
-                            //$.log(data);
-                        }
-                }
+                $.log(data);
             } catch (e) {
                 $.log(e)
             }
             resolve();
-        });
-    });
+        })
+    })
 }
 
-function receivecoin() {
+function openpage() {
     return new Promise((resolve, reject) => {
-        const url = "https://ocean.shuqireader.com/api/prizecenter/xapi/prize/manual/receive";
-
+        nowTime = new Date().getTime();
+        const url = `https://script.baertt.com/count2/openpage?referer=${encodearticles}&_=${nowTime}&jsonpcallback=jsonp5`;
         const request = {
             url: url,
-            headers: JSON.parse(receivecoinckArr[1]),
-            body: receivecoinckArr[0]
+            headers: headers,
+
         };
-        $.post(request, async(error, request, data) => {
+
+        $.get(request, function (error, response, data) {
             try {
-                if (error) {
-                    $.log("收集阅读金币请求失败,再次尝试收集阅读金币");
-                    await $.wait(5000);
-                    await receivecoin();
-                } else {
-                    //$.log(data);
-                    const result = JSON.parse(data);
-                    if (result.status == 200) {
-
-                        $.log("【收集金币】收集阅读金币成功，共获得" + ReadTimes * 3 + "金币");
-
-                    } else {
-                        $.log("【收集金币】收集阅读金币失败," + result.message);
-                        //$.log(data);
-                    }
-                }
-
+                $.log(data);
             } catch (e) {
                 $.log(e)
             }
             resolve();
-        });
-    });
+        })
+    })
 }
 
-function vediogoldprize(j) {
+function callback() {
     return new Promise((resolve, reject) => {
-        const url = "https://ocean.shuqireader.com/api/ad/v1/api/prize/lottery";
+        nowTime = new Date().getTime();
+        const url = `https://script.baertt.com/count2/callback?si=${wxck}&referer=${encodearticles}&_=${nowTime}&jsonpcallback=jsonp6`;
         const request = {
             url: url,
-            headers: JSON.parse(vediogoldprizeckArr[1]),
-            body: vediogoldprizeckArr[0]
+            headers: headers,
         };
-        $.post(request, async(error, request, data) => {
-            try {
-                if (error) {
-                    $.log("视频金币请求失败,再次尝试视频金币");
-                    await $.wait(5000);
-                    await vediogoldprize();
-                } else {
-                    const result = JSON.parse(data)
-                        //$.log(data);
-                        if (result.status == 200) {
-                            j++;
-                            $.log("【视频金币】观看第" + j + "个视频成功，获得250金币，等待30s观看下一个视频");
-                            vediogold += 250;
-                            await $.wait(30000);
-                            await vediogoldprize(j);
-                        } else {
-                            if (result.message != '领取达到每日上限，请明天再来') {
-                                $.log("【视频金币】观看失败，" + result.message + ",再次尝试视频金币");
-                                await $.wait(30000);
-                                await vediogoldprize(j);
-                            } else
-                                $.log("【视频金币】观看失败," + result.message);
-                            //$.log(data);
 
-                        }
-                }
+        $.get(request, function (error, response, data) {
+            try {
+                $.log(data);
             } catch (e) {
                 $.log(e)
             }
             resolve();
-        });
-    });
-}
-
-function vediodrawprize(k) {
-    return new Promise((resolve, reject) => {
-        const url = "https://ocean.shuqireader.com/api/ad/v1/api/prize/lottery";
-
-        const request = {
-            url: url,
-            headers: JSON.parse(vediodrawprizeckArr[1]),
-            body: vediodrawprizeckArr[0]
-        };
-        $.post(request, async(error, request, data) => {
-            try {
-                if (error) {
-                    $.log("视频抽奖请求失败,再次尝试视频抽奖");
-                    await $.wait(5000);
-                    await vediodrawprize();
-                } else {
-                    const result = JSON.parse(data)
-                        //$.log(data);
-                        if (result.status == 200) {
-                            k++;
-                            $.log("【视频抽奖】观看第" + k + "个视频成功，获得一次抽奖机会");
-                            await $.wait(5000);
-                            await draw(k);
-                        } else {
-                            if (result.message != '领取达到每日上限，请明天再来') {
-                                $.log("【视频抽奖】观看失败，" + result.message + ",再次尝试视频抽奖");
-                                await $.wait(5000);
-                                await vediodrawprize(k);
-                            } else
-                                $.log("【视频抽奖】观看失败," + result.message);
-                            //$.log(data);
-                        }
-                }
-            } catch (e) {
-                $.log(e)
-            }
-            resolve();
-        });
-    });
-}
-
-function draw(k) {
-    return new Promise((resolve, reject) => {
-        const url = "https://ocean.shuqireader.com/api/activity/activity/v1/lottery/draw?asac=2A20C07RJ9F51AOEFSNHDR";
-
-        const request = {
-            url: url,
-            headers: JSON.parse(drawckArr[1]),
-            body: drawckArr[0]
-        };
-        $.post(request, async(error, request, data) => {
-            try {
-                if (error) {
-                    $.log("抽奖任务请求失败,再次尝试视频抽奖");
-                    await $.wait(5000);
-                    await draw();
-                } else {
-                    const result = JSON.parse(data)
-                        //$.log(data);
-                        if (result.status == 200) {
-                            k++;
-                            $.log("【抽奖任务】抽奖成功，获得" + result.data.prizeList[0].prizeName);
-                            drawgold += parseInt(result.data.prizeList[0].prizeName);
-                            await $.wait(5000);
-                            await draw(k);
-                        } else {
-                            $.log("【抽奖任务】抽奖失败," + result.message);
-                            //$.log(data);
-                        }
-                }
-            } catch (e) {
-                $.log(e)
-            }
-            resolve();
-        });
-    });
-}
-
-function userinfo() {
-    return new Promise((resolve, reject) => {
-        const request = {
-            url: userinfock,
-            headers: {},
-            body: ""
-        };
-
-        $.post(request, async(error, request, data) => {
-            try {
-                if (error) {
-                    $.log("用户信息请求失败,再次尝试用户信息请求");
-                    await $.wait(5000);
-                    await userinfo();
-                } else {
-                    //$.log(data);
-                    const result = JSON.parse(data);
-                    if (result.status == 200) {
-                        $.log("【阅读任务】本次共获得" + ReadTimes * 3 + "金币");
-                        $.log("【视频任务】本次共获得" + vediogold + "金币");
-                        $.log("【抽奖任务】本次共获得" + drawgold + "金币");
-                        $.log("【金币总数】" + result.data.gold);
-                        $.log("【总计收益】" + result.data.income + "元");
-                    } else {
-                        $.log("【金币总数】数据异常," + result.message);
-                        //$.log(data);
-                    }
-                }
-            } catch (e) {
-                $.log(e)
-            }
-            resolve();
-        });
-    });
+        })
+    })
 }
 
 function Env(t, e) {

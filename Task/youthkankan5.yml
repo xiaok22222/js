@@ -1,0 +1,33 @@
+name: kankan5
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '7 * * * *'
+jobs:
+  build:
+    runs-on: macos-latest
+    if: github.event.repository.owner.id == github.event.sender.id
+    steps:
+      - name: Checkout
+        run: |
+          git clone https://github.com/caixukun112/js.git ~/js              
+      - name: Use Node.js 14.x
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14.x
+      - name: npm install
+        run: |
+          cd ~/js
+          npm install
+          npm install cron
+          npm install request
+          curl ipinfo.io/json
+
+      - name: '【kankan】'
+        run: |
+          cd ~/js/Task 
+          node youthkankan5.js  
+        env:
+          ENCRYPT_KEY: ${{ secrets.ENCRYPT_KEY }}
+ 
+
